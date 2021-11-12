@@ -53,6 +53,8 @@ class RestAuthProvider(object):
             return None
         return address
 
+    async def on_logged_out(self, user_id, device_id, access_token):
+        return True
 
     async def check_password(self, user_id, password):
         logger.info("Got password check for " + user_id)
