@@ -19,6 +19,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
+from typing import Awaitable, Callable, Optional, Tuple
+
+import synapse
+from synapse import module_api
+
 import logging
 import requests
 import json
