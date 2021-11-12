@@ -42,6 +42,18 @@ class RestAuthProvider(object):
         logger.info('Endpoint: %s', self.endpoint)
         logger.info('Enforce lowercase username during registration: %s', self.regLower)
 
+    async def check_3pid_auth(self, medium, address, password):
+        logger.info("Got password check for " + address)
+        if medium != "email":
+            reason = "Medium is not email. Unsuported medium for login using the rest-password-provider. Only username and email is supported."
+            logger.warning(reason)
+            return None
+        login_result = await self.check_password(user_id=address,password=password)
+        if not login_result:
+            return None
+        return address
+
+
     async def check_password(self, user_id, password):
         logger.info("Got password check for " + user_id)
         data = {'user': {'id': user_id, 'password': password}}
