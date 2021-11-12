@@ -1,9 +1,13 @@
 # Synapse REST Password provider
-- [Overview](#overview)
-- [Install](#install)
-- [Configure](#configure)
-- [Integrate](#integrate)
-- [Support](#support)
+- [Synapse REST Password provider](#synapse-rest-password-provider)
+  - [Overview](#overview)
+  - [Install](#install)
+  - [Configure](#configure)
+  - [Use](#use)
+  - [Next steps](#next-steps)
+    - [Lowercase username enforcement](#lowercase-username-enforcement)
+    - [Profile auto-fill](#profile-auto-fill)
+  - [Integrate](#integrate)
 
 ## Overview
 This synapse's password provider allows you to validate a password for a given username and return a user profile using an existing backend, like:
@@ -30,9 +34,9 @@ sudo pip install git+https://github.com/ma1uta/matrix-synapse-rest-password-prov
 If the command fail, double check that the python version still matches. If not, please let us know by opening an issue.
 
 ## Configure
-Add or amend the `password_providers` entry like so:
+Add or amend the `modules` entry like so:
 ```yaml
-password_providers:
+modules:
   - module: "rest_auth_provider.RestAuthProvider"
     config:
       endpoint: "http://change.me.example.com:12345"

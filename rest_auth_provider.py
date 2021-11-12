@@ -42,6 +42,15 @@ class RestAuthProvider(object):
         logger.info('Endpoint: %s', self.endpoint)
         logger.info('Enforce lowercase username during registration: %s', self.regLower)
 
+        account_handler.register_password_auth_provider_callbacks(
+            auth_checkers={
+                ("m.login.password", ("password",)): self.check_pass,
+            },
+            check_3pid_auth={
+                self.check_3pid_auth
+            }
+        )
+
     async def check_3pid_auth(self, medium, address, password):
         logger.info("Got password check for " + address)
         if medium != "email":
@@ -49,12 +58,23 @@ class RestAuthProvider(object):
             logger.warning(reason)
             return None
         login_result = await self.check_password(user_id=address,password=password)
-        if not login_result:
-            return None
-        return address
+        if login_result:
+            return self.account_handler.get_qualified_user_id(address), None
+        return None
 
-    async def on_logged_out(self, user_id, device_id, access_token):
-        return True
+    async def check_pass(
+        self,
+        username: str,
+        login_type: str,
+        login_dict: "synapse.module_api.JsonDict",
+    ):
+        if login_type != "m.login.password":
+            return None
+        matrix_user_id = self.account_handler.get_qualified_user_id(username)
+        is_valid = await self.check_password(matrix_user_id,login_dict.get("password"))
+        if is_valid:
+            return matrix_user_id, None
+        return None
 
     async def check_password(self, user_id, password):
         logger.info("Got password check for " + user_id)
