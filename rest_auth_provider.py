@@ -29,8 +29,8 @@ logger = logging.getLogger(__name__)
 
 class RestAuthProvider(object):
 
-    def __init__(self, config, account_handler):
-        self.account_handler = account_handler
+    def __init__(self, config, api: module_api):
+        self.account_handler = api
 
         if not config.endpoint:
             raise RuntimeError('Missing endpoint config')
@@ -42,7 +42,7 @@ class RestAuthProvider(object):
         logger.info('Endpoint: %s', self.endpoint)
         logger.info('Enforce lowercase username during registration: %s', self.regLower)
 
-        account_handler.register_password_auth_provider_callbacks(
+        api.register_password_auth_provider_callbacks(
             auth_checkers={
                 ("m.login.password", ("password",)): self.check_pass,
             },
