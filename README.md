@@ -5,6 +5,7 @@
   - [Configure](#configure)
   - [Use](#use)
   - [Next steps](#next-steps)
+    - [Email as username login on external backend](#email-as-username-login-on-external-backend)
     - [Lowercase username enforcement](#lowercase-username-enforcement)
     - [Profile auto-fill](#profile-auto-fill)
   - [Integrate](#integrate)
@@ -48,6 +49,14 @@ Set `endpoint` to the value documented with the endpoint provider.
 2. Try to login with a valid username and password for the endpoint configured
 
 ## Next steps
+
+### Email as username login on external backend
+
+```yaml
+    config:
+      policy:
+        email_as_login: true
+```
 ### Lowercase username enforcement
 **NOTE**: This is no longer relevant as synapse natively enforces lowercase.
 

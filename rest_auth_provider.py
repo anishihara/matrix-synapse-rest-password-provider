@@ -51,9 +51,7 @@ class RestAuthProvider(object):
             auth_checkers={
                 ("m.login.password", ("password",)): self.check_pass,
             },
-            check_3pid_auth={
-                self.check_3pid_auth
-            }
+            check_3pid_auth=self.check_3pid_auth
         )
 
     async def check_3pid_auth(self, medium, address, password):
