@@ -60,9 +60,10 @@ class RestAuthProvider(object):
             reason = "Medium is not email. Unsuported medium for login using the rest-password-provider. Only username and email is supported."
             logger.warning(reason)
             return None
-        login_result = await self.check_password(user_id=address,password=password)
+        matrix_user_id = self.account_handler.get_qualified_user_id(address)
+        login_result = await self.check_password(user_id=matrix_user_id,password=password)
         if login_result:
-            return self.account_handler.get_qualified_user_id(address), None
+            return matrix_user_id, None
         return None
 
     async def check_pass(
