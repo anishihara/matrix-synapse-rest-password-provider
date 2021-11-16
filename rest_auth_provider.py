@@ -92,9 +92,9 @@ class RestAuthProvider(object):
             return matrix_user_id, None
         return None
 
-    async def check_password(self, user_id, password):
-        logger.info("Got password check for " + user_id)
-        data = {'user': {'id': user_id, 'password': password}}
+    async def check_password(self, matrix_user_id, password):
+        logger.info("Got password check for " + matrix_user_id)
+        data = {'user': {'id': matrix_user_id, 'password': password}}
         r = requests.post(self.endpoint + '/_matrix-internal/identity/v1/check_credentials', json=data)
         r.raise_for_status()
         r = r.json()
@@ -108,6 +108,7 @@ class RestAuthProvider(object):
             logger.info("User not authenticated")
             return False
 
+        user_id = re.sub('[^a-zA-Z0-9=_\-\.\/]','',matrix_user_id)
         localpart = user_id.split(":", 1)[0][1:]
         logger.info("User %s authenticated", user_id)
 
