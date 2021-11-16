@@ -119,7 +119,7 @@ class RestAuthProvider(object):
                 return None
 
             user_id = await self.account_handler.register_user(localpart=localpart)
-            _, access_token, _, _ = await self.register_device(user_id)
+            _, access_token, _, _ = await self.account_handler.register_device(user_id)
             registration = True
             logger.info("Registration based on REST data was successful for %s", user_id)
         else:
