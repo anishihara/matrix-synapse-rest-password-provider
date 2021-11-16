@@ -68,11 +68,11 @@ class RestAuthProvider(object):
             return None
         matrix_user_id = self.account_handler.get_qualified_user_id(address)
         # Pass email as @email:matrix_name
-        login_result = await self.check_password(user_id=matrix_user_id,password=password)
+        login_result = await self.check_password(matrix_user_id,password)
         if login_result:
             # Attention! Replace all characters not compatible with canonical matrix user id
             # Sanitize email address to be compatible with a matrix_user_id
-            sanitized_username = re.sub('[^a-zA-Z0-9=_\-\.\/]','',address)
+            sanitized_username = re.sub('[^a-zA-Z0-9=_\-\.\/]','.',address)
             sanitized_matrix_user_id = self.account_handler.get_qualified_user_id(sanitized_username)
             logger.info("Got password check for matrix user id" + sanitized_matrix_user_id)
             return sanitized_matrix_user_id, None
@@ -108,7 +108,7 @@ class RestAuthProvider(object):
             logger.info("User not authenticated")
             return False
 
-        user_id = re.sub('[^a-zA-Z0-9=_\-\.\/]','',matrix_user_id)
+        user_id = re.sub('[^a-zA-Z0-9=_\-\.\/]','.',matrix_user_id)
         localpart = user_id.split(":", 1)[0][1:]
         logger.info("User %s authenticated", user_id)
 
