@@ -5,6 +5,9 @@
 #
 # https://www.kamax.io/
 #
+# Modified by Anderson Nishihara to support email as username on login 
+# and the new module interface onSynapse v1.46
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Affero General Public License as
 # published by the Free Software Foundation, either version 3 of the
@@ -28,6 +31,7 @@ import logging
 import requests
 import json
 import time
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -50,9 +54,11 @@ class RestAuthProvider(object):
         api.register_password_auth_provider_callbacks(
             auth_checkers={
                 ("m.login.password", ("password",)): self.check_pass,
-            },
-            check_3pid_auth=self.check_3pid_auth
+            }
         )
+
+        if config.enableEmailAsLogin:
+            api.register_password_auth_provider_callbacks(check_3pid_auth=self.check_3pid_auth)
 
     async def check_3pid_auth(self, medium, address, password):
         logger.info("Got password check for " + address)
@@ -61,9 +67,14 @@ class RestAuthProvider(object):
             logger.warning(reason)
             return None
         matrix_user_id = self.account_handler.get_qualified_user_id(address)
+        # Pass email as @email:matrix_name
         login_result = await self.check_password(user_id=matrix_user_id,password=password)
         if login_result:
-            return matrix_user_id, None
+            # Attention! Replace all characters not compatible with canonical matrix user id
+            # Sanitize email address to be compatible with a matrix_user_id
+            sanitized_username = re.sub('[^a-zA-Z0-9=_\-\.\/]','',address)
+            sanitized_matrix_user_id = self.account_handler.get_qualified_user_id(sanitized_username)
+            return sanitized_matrix_user_id, None
         return None
 
     async def check_pass(
@@ -181,9 +192,19 @@ class RestAuthProvider(object):
             setNameOnLogin = False
             updateThreepid = True
             replaceThreepid = False
+            enableEmailAsLogin = False
 
         rest_config = _RestConfig()
         rest_config.endpoint = config["endpoint"]
+
+        try:
+            rest_config.enableEmailAsLogin = config['policy']['enable_email_as_login']
+        except TypeError:
+            # we don't care
+            pass
+        except KeyError:
+            # we don't care
+            pass
 
         try:
             rest_config.regLower = config['policy']['registration']['username']['enforceLowercase']
