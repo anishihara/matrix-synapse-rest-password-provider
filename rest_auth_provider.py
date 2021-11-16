@@ -68,14 +68,9 @@ class RestAuthProvider(object):
             return None
         matrix_user_id = self.account_handler.get_qualified_user_id(address)
         # Pass email as @email:matrix_name
-        login_result = await self.check_password(matrix_user_id,password)
-        if login_result:
-            # Attention! Replace all characters not compatible with canonical matrix user id
-            # Sanitize email address to be compatible with a matrix_user_id
-            sanitized_username = re.sub('[^a-zA-Z0-9=_\-\.\/]','.',address)
-            sanitized_matrix_user_id = self.account_handler.get_qualified_user_id(sanitized_username)
-            logger.info("Got password check for matrix user id" + sanitized_matrix_user_id)
-            return sanitized_matrix_user_id, None
+        sanitized_user_id = await self.check_password(matrix_user_id,password)
+        if sanitized_user_id:
+            return sanitized_user_id, None
         return None
 
     async def check_pass(
@@ -87,9 +82,9 @@ class RestAuthProvider(object):
         if login_type != "m.login.password":
             return None
         matrix_user_id = self.account_handler.get_qualified_user_id(username)
-        is_valid = await self.check_password(matrix_user_id,login_dict.get("password"))
+        sanitized_user_id = await self.check_password(matrix_user_id,login_dict.get("password"))
         if is_valid:
-            return matrix_user_id, None
+            return sanitized_user_id, None
         return None
 
     async def check_password(self, matrix_user_id, password):
@@ -106,10 +101,13 @@ class RestAuthProvider(object):
         auth = r["auth"]
         if not auth["success"]:
             logger.info("User not authenticated")
-            return False
+            return None
 
-        user_id = re.sub('[^a-zA-Z0-9=_\-\.\/]','.',matrix_user_id)
-        localpart = user_id.split(":", 1)[0][1:]
+        # Attention! Replace all characters not compatible with canonical matrix user id
+        # Sanitize email address to be compatible with a matrix_user_id
+        localpart_not_sanitized = matrix_user_id.split(":", 1)[0][1:]
+        localpart = re.sub('[^a-zA-Z0-9=_\-\.\/]','.',localpart_not_sanitized)
+        user_id = self.account_handler.get_qualified_user_id(localpart)
         logger.info("User %s authenticated", user_id)
 
         registration = False
@@ -118,9 +116,10 @@ class RestAuthProvider(object):
 
             if localpart != localpart.lower() and self.regLower:
                 logger.info('User %s was cannot be created due to username lowercase policy', localpart)
-                return False
+                return None
 
-            user_id, access_token = (await self.account_handler.register(localpart=localpart))
+            user_id = await self.account_handler.register_user(localpart=localpart)
+            _, access_token, _, _ = await self.register_device(user_id)
             registration = True
             logger.info("Registration based on REST data was successful for %s", user_id)
         else:
@@ -180,7 +179,7 @@ class RestAuthProvider(object):
         else:
             logger.info("No profile data")
 
-        return True
+        return user_id
 
     @staticmethod
     def parse_config(config):
