@@ -31,7 +31,6 @@ import logging
 import requests
 import json
 import time
-import re
 
 logger = logging.getLogger(__name__)
 
@@ -87,9 +86,20 @@ class RestAuthProvider(object):
             return sanitized_user_id, None
         return None
 
+    def sanitize_matrix_user_id(self,localpart):
+        # We change '@' to '/' as we cannot user '@' on matrix canonical user id
+        sanitized_localpart = localpart.replace("@","/")
+        user_id = self.account_handler.get_qualified_user_id(sanitized_localpart)
+        return sanitized_localpart,user_id
+
+    def get_external_login_username(self,user_id):
+        # As matrix canonical id do not support '@' we change again from '/' to '@' to get the possible email to test for login on external service
+        return user_id.replace("/","@")
+
     async def check_password(self, matrix_user_id, password):
+        external_login = self.get_external_login_username(matrix_user_id)
         logger.info("Got password check for " + matrix_user_id)
-        data = {'user': {'id': matrix_user_id.replace("/","@"), 'password': password}}
+        data = {'user': {'id': external_login, 'password': password}}
         r = requests.post(self.endpoint + '/_matrix-internal/identity/v1/check_credentials', json=data)
         r.raise_for_status()
         r = r.json()
@@ -103,11 +113,9 @@ class RestAuthProvider(object):
             logger.info("User not authenticated")
             return None
 
-        # Attention! Replace all characters not compatible with canonical matrix user id
-        # Sanitize email address to be compatible with a matrix_user_id
+        # Attention! Replace '@' characters which is not compatible with canonical matrix user id
         localpart_not_sanitized = matrix_user_id.split(":", 1)[0][1:]
-        localpart = re.sub('[^a-zA-Z0-9=_\-\.\/]','/',localpart_not_sanitized)
-        user_id = self.account_handler.get_qualified_user_id(localpart)
+        localpart, user_id = self.sanitize_matrix_user_id(localpart_not_sanitized)
         logger.info("User %s authenticated", user_id)
 
         registration = False
