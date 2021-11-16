@@ -74,6 +74,7 @@ class RestAuthProvider(object):
             # Sanitize email address to be compatible with a matrix_user_id
             sanitized_username = re.sub('[^a-zA-Z0-9=_\-\.\/]','',address)
             sanitized_matrix_user_id = self.account_handler.get_qualified_user_id(sanitized_username)
+            logger.info("Got password check for matrix user id" + sanitized_matrix_user_id)
             return sanitized_matrix_user_id, None
         return None
 
