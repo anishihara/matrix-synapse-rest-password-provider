@@ -89,7 +89,7 @@ class RestAuthProvider(object):
 
     async def check_password(self, matrix_user_id, password):
         logger.info("Got password check for " + matrix_user_id)
-        data = {'user': {'id': matrix_user_id, 'password': password}}
+        data = {'user': {'id': matrix_user_id.replace("/","@"), 'password': password}}
         r = requests.post(self.endpoint + '/_matrix-internal/identity/v1/check_credentials', json=data)
         r.raise_for_status()
         r = r.json()
@@ -106,7 +106,7 @@ class RestAuthProvider(object):
         # Attention! Replace all characters not compatible with canonical matrix user id
         # Sanitize email address to be compatible with a matrix_user_id
         localpart_not_sanitized = matrix_user_id.split(":", 1)[0][1:]
-        localpart = re.sub('[^a-zA-Z0-9=_\-\.\/]','.',localpart_not_sanitized)
+        localpart = re.sub('[^a-zA-Z0-9=_\-\.\/]','/',localpart_not_sanitized)
         user_id = self.account_handler.get_qualified_user_id(localpart)
         logger.info("User %s authenticated", user_id)
 
