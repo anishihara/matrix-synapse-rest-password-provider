@@ -83,7 +83,7 @@ class RestAuthProvider(object):
             return None
         matrix_user_id = self.account_handler.get_qualified_user_id(username)
         sanitized_user_id = await self.check_password(matrix_user_id,login_dict.get("password"))
-        if is_valid:
+        if sanitized_user_id:
             return sanitized_user_id, None
         return None
 
