@@ -1,5 +1,5 @@
-# Synapse REST Password provider
-- [Synapse REST Password provider](#synapse-rest-password-provider)
+# Synapse REST Password provider with email as login support
+- [Synapse REST Password provider with email as login support](#synapse-rest-password-provider-with-email-as-login-support)
   - [Overview](#overview)
   - [Install](#install)
   - [Configure](#configure)
@@ -25,11 +25,12 @@ missing features and offer a fully integrated solution (directory, authenticatio
 your own backend, following the [Integration section](#integrate). This module simply translate an anthentication result
 and profile information into actionables in synapse, and adapt your user profile with what is given.
 
+**NOTE 2:** This module is a modification from [ma1uta](https://github.com/ma1uta/matrix-synapse-rest-password-provider) to support email as login and the new Synapse (v1.46) interface for modules.
 ## Install
 Copy in whichever directory python can pick it up as a module.
 
 ```
-sudo pip install git+https://github.com/ma1uta/matrix-synapse-rest-password-provider
+sudo pip install git+https://github.com/anishihara/matrix-synapse-rest-password-provider
 ```
 
 If the command fail, double check that the python version still matches. If not, please let us know by opening an issue.
@@ -55,7 +56,7 @@ Set `endpoint` to the value documented with the endpoint provider.
 ```yaml
     config:
       policy:
-        email_as_login: true
+        enable_email_as_login: true
 ```
 ### Lowercase username enforcement
 **NOTE**: This is no longer relevant as synapse natively enforces lowercase.
