@@ -65,12 +65,14 @@ class RestAuthProvider(object):
             reason = "Medium is not email. Unsuported medium for login using the rest-password-provider. Only username and email is supported."
             logger.warning(reason)
             return None
-        matrix_user_id = self.account_handler.get_qualified_user_id(address)
-        # Pass email as @email:matrix_name
-        sanitized_user_id = await self.check_password(matrix_user_id,password)
-        if sanitized_user_id:
-            return sanitized_user_id, None
-        return None
+        auth = await self.check_external_login(username=self.account_handler.get_qualified_user_id(address),password=password)
+        if not auth:
+            return None
+        _,sanitized_user_id = self.sanitize_user_id(address)
+        user_id = await self.initialize_user(user_id=sanitized_user_id,auth=auth)
+        if not user_id:
+            return None
+        return user_id,None
 
     async def check_pass(
         self,
@@ -81,12 +83,15 @@ class RestAuthProvider(object):
         if login_type != "m.login.password":
             return None
         matrix_user_id = self.account_handler.get_qualified_user_id(username)
-        sanitized_user_id = await self.check_password(matrix_user_id,login_dict.get("password"))
-        if sanitized_user_id:
-            return sanitized_user_id, None
-        return None
+        auth = await self.check_external_login(username=matrix_user_id,password=login_dict.get("password"))
+        if not auth:
+            return None
+        initialized_user_id = await self.initialize_user(user_id=matrix_user_id,auth=auth)
+        if not initialized_user_id:
+            return None
+        return initialized_user_id, None
 
-    def sanitize_matrix_user_id(self,localpart):
+    def sanitize_user_id(self,localpart):
         # We change '@' to '/' as we cannot user '@' on matrix canonical user id
         sanitized_localpart = localpart.replace("@","/")
         user_id = self.account_handler.get_qualified_user_id(sanitized_localpart)
@@ -96,10 +101,9 @@ class RestAuthProvider(object):
         # As matrix canonical id do not support '@' we change again from '/' to '@' to get the possible email to test for login on external service
         return user_id.replace("/","@")
 
-    async def check_password(self, matrix_user_id, password):
-        external_login = self.get_external_login_username(matrix_user_id)
-        logger.info("Got password check for " + matrix_user_id)
-        data = {'user': {'id': external_login, 'password': password}}
+    async def check_external_login(self, username, password):
+        logger.info("Got password check for " + username)
+        data = {'user': {'id': username, 'password': password}}
         r = requests.post(self.endpoint + '/_matrix-internal/identity/v1/check_credentials', json=data)
         r.raise_for_status()
         r = r.json()
@@ -112,10 +116,10 @@ class RestAuthProvider(object):
         if not auth["success"]:
             logger.info("User not authenticated")
             return None
+        return auth       
 
-        # Attention! Replace '@' characters which is not compatible with canonical matrix user id
-        localpart_not_sanitized = matrix_user_id.split(":", 1)[0][1:]
-        localpart, user_id = self.sanitize_matrix_user_id(localpart_not_sanitized)
+    async def initialize_user(self, user_id, auth):
+        localpart = user_id.split(":", 1)[0][1:]
         logger.info("User %s authenticated", user_id)
 
         registration = False
