@@ -92,14 +92,13 @@ class RestAuthProvider(object):
         return initialized_user_id, None
 
     def sanitize_user_id(self,localpart):
-        # We change '@' to '/' as we cannot user '@' on matrix canonical user id
+        # We change '@' to '/' as we cannot use '@' on matrix canonical user id
+        # Example:
+        # - email: john@gmail.com
+        # - matrix canonical id: @john/gmail.com:domain_name
         sanitized_localpart = localpart.replace("@","/")
         user_id = self.account_handler.get_qualified_user_id(sanitized_localpart)
         return sanitized_localpart,user_id
-
-    def get_external_login_username(self,user_id):
-        # As matrix canonical id do not support '@' we change again from '/' to '@' to get the possible email to test for login on external service
-        return user_id.replace("/","@")
 
     async def check_external_login(self, username, password):
         logger.info("Got password check for " + username)
