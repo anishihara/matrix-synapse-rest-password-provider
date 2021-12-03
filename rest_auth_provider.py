@@ -66,7 +66,7 @@ class RestAuthProvider(object):
             reason = "Medium is not email. Unsuported medium for login using the rest-password-provider. Only username and email is supported."
             logger.warning(reason)
             return None
-        return self.handle_login(login=address,password=password)
+        return await self.handle_login(login=address,password=password)
 
     async def check_pass(
         self,
@@ -76,7 +76,7 @@ class RestAuthProvider(object):
     ):
         if login_type != "m.login.password":
             return None
-        return self.handle_login(login=username,password=login_dict.get("password"))
+        return await self.handle_login(login=username,password=login_dict.get("password"))
 
     async def handle_login(self,login,password):
         auth = await self.check_external_login(username=self.account_handler.get_qualified_user_id(login),password=password)
