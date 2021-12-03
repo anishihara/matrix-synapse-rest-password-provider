@@ -65,14 +65,7 @@ class RestAuthProvider(object):
             reason = "Medium is not email. Unsuported medium for login using the rest-password-provider. Only username and email is supported."
             logger.warning(reason)
             return None
-        auth = await self.check_external_login(username=self.account_handler.get_qualified_user_id(address),password=password)
-        if not auth:
-            return None
-        _,sanitized_user_id = self.sanitize_user_id(address)
-        user_id = await self.initialize_user(user_id=sanitized_user_id,auth=auth)
-        if not user_id:
-            return None
-        return user_id,None
+        return self.handle_login(login=address,password=password)
 
     async def check_pass(
         self,
@@ -82,14 +75,17 @@ class RestAuthProvider(object):
     ):
         if login_type != "m.login.password":
             return None
-        matrix_user_id = self.account_handler.get_qualified_user_id(username)
-        auth = await self.check_external_login(username=matrix_user_id,password=login_dict.get("password"))
+        return self.handle_login(login=username,password=login_dict.get("password"))
+
+    async def handle_login(self,login,password):
+        auth = await self.check_external_login(username=self.account_handler.get_qualified_user_id(login),password=password)
         if not auth:
             return None
-        initialized_user_id = await self.initialize_user(user_id=matrix_user_id,auth=auth)
-        if not initialized_user_id:
+        _,sanitized_user_id = self.sanitize_user_id(login)
+        user_id = await self.initialize_matrix_user(user_id=sanitized_user_id,auth=auth)
+        if not user_id:
             return None
-        return initialized_user_id, None
+        return user_id, None
 
     def sanitize_user_id(self,localpart):
         # We change '@' to '/' as we cannot use '@' on matrix canonical user id
@@ -117,7 +113,7 @@ class RestAuthProvider(object):
             return None
         return auth       
 
-    async def initialize_user(self, user_id, auth):
+    async def initialize_matrix_user(self, user_id, auth):
         localpart = user_id.split(":", 1)[0][1:]
         logger.info("User %s authenticated", user_id)
 
