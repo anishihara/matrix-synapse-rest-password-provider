@@ -82,7 +82,7 @@ class RestAuthProvider(object):
         auth = await self.check_external_login(username=self.account_handler.get_qualified_user_id(login),password=password)
         if not auth:
             return None
-        _,sanitized_user_id = self.sanitize_user_id(login)
+        _,sanitized_user_id = self.sanitize_matrix_user_id(login)
         user_id = await self.initialize_matrix_user(user_id=sanitized_user_id,auth=auth)
         if not user_id:
             return None
