@@ -31,6 +31,7 @@ import logging
 import requests
 import json
 import time
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -87,12 +88,12 @@ class RestAuthProvider(object):
             return None
         return user_id, None
 
-    def sanitize_user_id(self,localpart):
-        # We change '@' to '/' as we cannot use '@' on matrix canonical user id
+    def sanitize_matrix_user_id(self,localpart):
+        # Replace all characters not supported on matrix canonical user id
         # Example:
         # - email: john@gmail.com
         # - matrix canonical id: @john/gmail.com:domain_name
-        sanitized_localpart = localpart.replace("@","/")
+        sanitized_localpart = re.sub(r'[^a-z0-9=_\-.\/]','/',localpart.lower())
         user_id = self.account_handler.get_qualified_user_id(sanitized_localpart)
         return sanitized_localpart,user_id
 
